@@ -29,7 +29,7 @@ test("runtime parses and exposes a versioned API without booting twice", () => {
     window,
   });
 
-  assert.equal(window.CarlisleRuntime.version, "0.1.0");
+  assert.equal(window.CarlisleRuntime.version, "0.1.1");
   assert.equal(window.CarlisleRuntime.state.booted, false);
   assert.equal(typeof window.CarlisleRuntime.boot, "function");
   assert.equal(typeof readyCallback, "function");
@@ -81,4 +81,6 @@ test("industry sliders remain static on mobile", () => {
   assert.match(source, /id === "industry"/);
   assert.match(source, /matchMedia\("\(max-width: 767px\)"\)/);
   assert.match(source, /industry-mobile-static/);
+  assert.match(source, /classList\.remove\("swiper", "swiper-initialized", "swiper-horizontal"\)/);
+  assert.match(source, /addEventListener\("change", updateIndustrySliders\)/);
 });

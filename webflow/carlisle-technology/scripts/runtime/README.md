@@ -19,7 +19,7 @@ The production consumer must use an immutable Git commit and SHA-384 integrity v
   integrity="sha384-INTEGRITY"
   crossorigin="anonymous"
   defer
-  data-carlisle-runtime="0.1.0"
+  data-carlisle-runtime="0.1.1"
 ></script>
 ```
 

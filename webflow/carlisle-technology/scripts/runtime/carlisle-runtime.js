@@ -1,7 +1,7 @@
 (function carlisleRuntimeBootstrap(window, document) {
   "use strict";
 
-  const VERSION = "0.1.0";
+  const VERSION = "0.1.1";
   const RUNTIME_NAME = "CarlisleRuntime";
   const SWIPER_VERSION = "8";
   const SWIPER_CSS = `https://cdn.jsdelivr.net/npm/swiper@${SWIPER_VERSION}/swiper-bundle.min.css`;
@@ -18,6 +18,7 @@
     dependencies: new Map(),
     features: new Map(),
   };
+  let industryMediaBound = false;
 
   function debug(...args) {
     if (window.localStorage && window.localStorage.getItem("carlisle-runtime-debug") === "true") {
@@ -274,12 +275,6 @@
     if (!prepared) return;
 
     const id = component.getAttribute("data-slider-id");
-    const isIndustry = id === "industry";
-    if (isIndustry && window.matchMedia("(max-width: 767px)").matches) {
-      component.dataset.carlisleSlider = "industry-mobile-static";
-      return;
-    }
-
     new window.Swiper(prepared.element, {
       ...commonSliderOptions(component, prepared.element),
       loopAdditionalSlides: 10,
@@ -294,6 +289,49 @@
     component.dataset.carlisleSlider = id || "generic";
   }
 
+  function initIndustrySlider(component) {
+    const prepared = prepareSlider(component);
+    if (!prepared) return;
+
+    if (prepared.element.swiper && !prepared.element.swiper.destroyed) {
+      prepared.element.swiper.destroy(true, true);
+    }
+
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      prepared.element.classList.remove("swiper", "swiper-initialized", "swiper-horizontal");
+      prepared.wrapper.classList.remove("swiper-wrapper");
+      prepared.wrapper.style.removeProperty("transform");
+      prepared.wrapper.style.removeProperty("transition-duration");
+      [...prepared.wrapper.children].forEach((slide) => {
+        slide.classList.remove(
+          "swiper-slide",
+          "swiper-slide-active",
+          "swiper-slide-next",
+          "swiper-slide-prev",
+          "swiper-slide-duplicate",
+          "is-active"
+        );
+        slide.removeAttribute("role");
+        slide.removeAttribute("aria-label");
+        slide.style.removeProperty("width");
+        slide.style.removeProperty("margin-right");
+      });
+      component.dataset.carlisleSlider = "industry-mobile-static";
+      component.dataset.industrySliderMode = "stack";
+      return;
+    }
+
+    new window.Swiper(prepared.element, {
+      ...commonSliderOptions(component, prepared.element),
+      loopAdditionalSlides: 10,
+      observer: true,
+      observeParents: true,
+      pagination: false,
+    });
+    component.dataset.carlisleSlider = "industry";
+    component.dataset.industrySliderMode = "slider";
+  }
+
   function initSliders() {
     document
       .querySelectorAll("[data-slider='component']:not([data-slider='component'] [data-slider='component'])")
@@ -301,8 +339,23 @@
         const id = component.getAttribute("data-slider-id");
         if (id === "secondary") initSecondarySlider(component);
         else if (id === "tertiary") initTertiarySlider(component);
+        else if (id === "industry") initIndustrySlider(component);
         else initGenericSlider(component);
       });
+
+    if (!industryMediaBound && document.querySelector("[data-slider-id='industry']")) {
+      industryMediaBound = true;
+      const mobileQuery = window.matchMedia("(max-width: 767px)");
+      const updateIndustrySliders = () => {
+        document.querySelectorAll("[data-slider-id='industry']").forEach((component) => {
+          delete component.dataset.carlisleSlider;
+          initIndustrySlider(component);
+        });
+      };
+
+      if (mobileQuery.addEventListener) mobileQuery.addEventListener("change", updateIndustrySliders);
+      else mobileQuery.addListener(updateIndustrySliders);
+    }
   }
 
   function copyCard(sourceCard, slot) {
