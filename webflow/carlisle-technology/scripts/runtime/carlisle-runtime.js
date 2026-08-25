@@ -1,7 +1,7 @@
 (function carlisleRuntimeBootstrap(window, document) {
   "use strict";
 
-  const VERSION = "0.1.2";
+  const VERSION = "0.1.3";
   const RUNTIME_NAME = "CarlisleRuntime";
   const SWIPER_VERSION = "8";
   const SWIPER_CSS = `https://cdn.jsdelivr.net/npm/swiper@${SWIPER_VERSION}/swiper-bundle.min.css`;
@@ -9,6 +9,7 @@
   const FINSWEET_LIST = "https://cdn.jsdelivr.net/npm/@finsweet/attributes@2/attributes.js";
   const GSAP_JS = "https://cdn.prod.website-files.com/gsap/3.15.0/gsap.min.js";
   const SCROLL_TRIGGER_JS = "https://cdn.prod.website-files.com/gsap/3.15.0/ScrollTrigger.min.js";
+  const SLIDER_ROOT_MARGIN = "320px 0px";
 
   const existingRuntime = window[RUNTIME_NAME];
   if (existingRuntime && existingRuntime.version === VERSION) return;
@@ -19,6 +20,7 @@
     features: new Map(),
   };
   let industryMediaBound = false;
+  let sliderObserver;
 
   function debug(...args) {
     if (window.localStorage && window.localStorage.getItem("carlisle-runtime-debug") === "true") {
@@ -332,30 +334,127 @@
     component.dataset.industrySliderMode = "slider";
   }
 
-  function initSliders() {
-    document
-      .querySelectorAll("[data-slider='component']:not([data-slider='component'] [data-slider='component'])")
-      .forEach((component) => {
-        const id = component.getAttribute("data-slider-id");
-        if (id === "secondary") initSecondarySlider(component);
-        else if (id === "tertiary") initTertiarySlider(component);
-        else if (id === "industry") initIndustrySlider(component);
-        else initGenericSlider(component);
-      });
+  function getSliderComponents() {
+    return [
+      ...document.querySelectorAll(
+        "[data-slider='component']:not([data-slider='component'] [data-slider='component'])"
+      ),
+    ];
+  }
 
-    if (!industryMediaBound && document.querySelector("[data-slider-id='industry']")) {
-      industryMediaBound = true;
-      const mobileQuery = window.matchMedia("(max-width: 767px)");
-      const updateIndustrySliders = () => {
-        document.querySelectorAll("[data-slider-id='industry']").forEach((component) => {
-          delete component.dataset.carlisleSlider;
-          initIndustrySlider(component);
-        });
-      };
+  function initSliderComponent(component) {
+    const id = component.getAttribute("data-slider-id");
+    if (id === "secondary") initSecondarySlider(component);
+    else if (id === "tertiary") initTertiarySlider(component);
+    else if (id === "industry") initIndustrySlider(component);
+    else initGenericSlider(component);
+  }
 
-      if (mobileQuery.addEventListener) mobileQuery.addEventListener("change", updateIndustrySliders);
-      else mobileQuery.addListener(updateIndustrySliders);
+  function initializeSliderComponent(component) {
+    const isMobileIndustry =
+      component.getAttribute("data-slider-id") === "industry" &&
+      window.matchMedia("(max-width: 767px)").matches;
+
+    if (isMobileIndustry) {
+      initIndustrySlider(component);
+      return Promise.resolve();
     }
+
+    return ensureSwiper().then(() => initSliderComponent(component));
+  }
+
+  function activateSliderComponent(component) {
+    if (component.dataset.carlisleSliderActivated === "true") return;
+    component.dataset.carlisleSliderActivated = "true";
+    if (sliderObserver) sliderObserver.unobserve(component);
+
+    initializeSliderComponent(component).catch((error) => {
+      delete component.dataset.carlisleSliderActivated;
+      console.error("[Carlisle Runtime] Slider failed to initialize.", error);
+    });
+  }
+
+  function observeSliderComponent(component) {
+    if (component.dataset.carlisleSliderScheduled === "true") return;
+    component.dataset.carlisleSliderScheduled = "true";
+    sliderObserver.observe(component);
+  }
+
+  function bindIndustryMedia() {
+    if (industryMediaBound || !document.querySelector("[data-slider-id='industry']")) return;
+    industryMediaBound = true;
+    const mobileQuery = window.matchMedia("(max-width: 767px)");
+    const updateIndustrySliders = () => {
+      document.querySelectorAll("[data-slider-id='industry']").forEach((component) => {
+        delete component.dataset.carlisleSlider;
+
+        if (mobileQuery.matches) {
+          initIndustrySlider(component);
+          return;
+        }
+
+        if (component.dataset.carlisleSliderActivated === "true") {
+          initializeSliderComponent(component).catch((error) => {
+            console.error("[Carlisle Runtime] Industry slider failed to initialize.", error);
+          });
+          return;
+        }
+
+        delete component.dataset.carlisleSliderScheduled;
+        observeSliderComponent(component);
+      });
+    };
+
+    if (mobileQuery.addEventListener) mobileQuery.addEventListener("change", updateIndustrySliders);
+    else mobileQuery.addListener(updateIndustrySliders);
+  }
+
+  function scheduleSliders() {
+    const components = getSliderComponents();
+    if (!components.length) return;
+
+    if (!("IntersectionObserver" in window)) {
+      components.forEach((component) => {
+        if (
+          component.getAttribute("data-slider-id") === "industry" &&
+          window.matchMedia("(max-width: 767px)").matches
+        ) {
+          initIndustrySlider(component);
+        }
+      });
+      whenIdle(() => {
+        ensureSwiper()
+          .then(initSliders)
+          .catch((error) => {
+            console.error("[Carlisle Runtime] Swiper failed to initialize.", error);
+          });
+      }, 2500);
+      bindIndustryMedia();
+      return;
+    }
+
+    sliderObserver = new window.IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) activateSliderComponent(entry.target);
+        });
+      },
+      { rootMargin: SLIDER_ROOT_MARGIN, threshold: 0.01 }
+    );
+
+    components.forEach((component) => {
+      const isMobileIndustry =
+        component.getAttribute("data-slider-id") === "industry" &&
+        window.matchMedia("(max-width: 767px)").matches;
+      if (isMobileIndustry) initIndustrySlider(component);
+      else observeSliderComponent(component);
+    });
+    bindIndustryMedia();
+  }
+
+  function initSliders() {
+    getSliderComponents().forEach(initSliderComponent);
+    bindIndustryMedia();
   }
 
   function copyCard(sourceCard, slot) {
@@ -799,9 +898,7 @@
 
     const hasSliders = Boolean(document.querySelector("[data-slider='component']"));
     if (hasSliders) {
-      once("sliders", () => ensureSwiper().then(initSliders)).catch((error) => {
-        console.error("[Carlisle Runtime] Swiper failed to initialize.", error);
-      });
+      once("slider-scheduler", scheduleSliders);
     }
 
     const hasHero = Boolean(document.querySelector("[hero-visual], [hero-content]"));
@@ -833,6 +930,7 @@
     ensureSwiper,
     initHomeResources,
     initSliders,
+    scheduleSliders,
   };
 
   onReady(boot);

@@ -5,6 +5,7 @@
 It currently owns:
 
 - one-flight Swiper, GSAP, ScrollTrigger, and Finsweet dependency loading;
+- viewport-proximate Swiper loading, with no Swiper download for mobile industry stacks;
 - generic, secondary, tertiary, and mobile-static industry sliders;
 - the homepage hero animation;
 - homepage latest-resource card selection without Finsweet;
@@ -20,7 +21,7 @@ The production consumer must use an immutable Git commit and SHA-384 integrity v
   integrity="sha384-INTEGRITY"
   crossorigin="anonymous"
   defer
-  data-carlisle-runtime="0.1.2"
+  data-carlisle-runtime="0.1.3"
 ></script>
 ```
 

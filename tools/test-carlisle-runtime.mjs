@@ -29,7 +29,7 @@ test("runtime parses and exposes a versioned API without booting twice", () => {
     window,
   });
 
-  assert.equal(window.CarlisleRuntime.version, "0.1.2");
+  assert.equal(window.CarlisleRuntime.version, "0.1.3");
   assert.equal(window.CarlisleRuntime.state.booted, false);
   assert.equal(typeof window.CarlisleRuntime.boot, "function");
   assert.equal(typeof readyCallback, "function");
@@ -83,6 +83,75 @@ test("industry sliders remain static on mobile", () => {
   assert.match(source, /industry-mobile-static/);
   assert.match(source, /classList\.remove\("swiper", "swiper-initialized", "swiper-horizontal"\)/);
   assert.match(source, /addEventListener\("change", updateIndustrySliders\)/);
+});
+
+test("Swiper is scheduled by viewport proximity instead of loaded during boot", () => {
+  assert.match(source, /new window\.IntersectionObserver/);
+  assert.match(source, /rootMargin: SLIDER_ROOT_MARGIN/);
+  assert.match(source, /once\("slider-scheduler", scheduleSliders\)/);
+  assert.doesNotMatch(source, /once\("sliders", \(\) => ensureSwiper\(\)\.then\(initSliders\)\)/);
+});
+
+test("boot observes an off-screen slider without injecting a Swiper dependency", async () => {
+  let readyCallback;
+  let observerOptions;
+  const observed = [];
+  const injectedDependencies = [];
+  const component = {
+    dataset: {},
+    getAttribute(name) {
+      return name === "data-slider-id" ? "tertiary" : null;
+    },
+  };
+  const document = {
+    readyState: "loading",
+    documentElement: { classList: { add() {} }, dataset: {} },
+    head: { appendChild(node) { injectedDependencies.push(node); } },
+    addEventListener(event, callback) {
+      if (event === "DOMContentLoaded") readyCallback = callback;
+    },
+    querySelector(selector) {
+      return selector === "[data-slider='component']" ? component : null;
+    },
+    querySelectorAll(selector) {
+      return selector.startsWith("[data-slider='component']:not") ? [component] : [];
+    },
+  };
+  const window = {
+    IntersectionObserver: class {
+      constructor(_callback, options) {
+        observerOptions = options;
+      }
+      observe(node) {
+        observed.push(node);
+      }
+    },
+    localStorage: { getItem() { return null; } },
+    location: { pathname: "/" },
+    matchMedia() {
+      return { addEventListener() {}, matches: false };
+    },
+    requestIdleCallback() {},
+    setTimeout() {},
+  };
+
+  vm.runInNewContext(source, { console, document, Map, Promise, window });
+  readyCallback();
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.deepEqual(observed, [component]);
+  assert.equal(observerOptions.rootMargin, "320px 0px");
+  assert.equal(injectedDependencies.length, 0);
+});
+
+test("mobile industry stacks do not require Swiper", () => {
+  const mobileBranch = source.slice(
+    source.indexOf("function initializeSliderComponent"),
+    source.indexOf("function activateSliderComponent")
+  );
+  assert.match(mobileBranch, /if \(isMobileIndustry\) \{/);
+  assert.ok(mobileBranch.indexOf("initIndustrySlider(component)") < mobileBranch.indexOf("ensureSwiper()"));
 });
 
 test("industry-card images receive a bounded responsive sizes rule", () => {
