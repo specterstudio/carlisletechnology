@@ -43,7 +43,7 @@ test("runtime parses and exposes a versioned API without booting twice", () => {
     window,
   });
 
-  assert.equal(window.CarlisleRuntime.version, "0.1.4");
+  assert.equal(window.CarlisleRuntime.version, "0.1.5");
   assert.equal(window.CarlisleRuntime.state.booted, false);
   assert.equal(typeof window.CarlisleRuntime.boot, "function");
   assert.equal(typeof readyCallback, "function");
@@ -185,10 +185,15 @@ test("hero pre-paint bootstrap parses and reserves the authored visual footprint
   assert.doesNotThrow(() => new vm.Script(prepaintSource));
   assert.match(prepaintSource, /data-hero-visual-spacer/);
   assert.match(prepaintSource, /insertBefore\(spacer, visual\)/);
+  assert.match(prepaintSource, /window\[SNAPSHOT_NAME\] = \{/);
+  assert.match(prepaintSource, /scrollY: window\.scrollY \|\| 0/);
+  assert.match(prepaintSource, /navEnd: \{/);
 });
 
-test("runtime reuses and temporarily removes the pre-paint spacer while measuring", () => {
+test("runtime reuses the pre-paint layout snapshot without measuring again", () => {
   assert.match(source, /:scope > \[data-hero-visual-spacer\]/);
-  assert.match(source, /if \(spacer\) spacer\.style\.display = "none";/);
-  assert.match(source, /naturalLayout = measureNaturalVisualLayout\(\)/);
+  assert.match(source, /prepaintSnapshot\?\.version === VERSION/);
+  assert.match(source, /\? prepaintSnapshot\.layout\s+: measureNaturalVisualLayout\(\)/);
+  assert.match(source, /\? prepaintSnapshot\.navEnd\s+: \{/);
+  assert.match(source, /hasPrepaintSnapshot \? prepaintSnapshot\.scrollY \|\| 0 : window\.scrollY \|\| 0/);
 });

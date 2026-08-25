@@ -16,7 +16,7 @@ It currently owns:
 
 The production consumer must use an immutable Git commit and SHA-384 integrity value. Do not use `@main` in Webflow.
 
-Inline `carlisle-hero-critical.css` and `carlisle-hero-prepaint.js` in the Webflow site head. The small synchronous pre-paint bootstrap reserves the hero's authored footprint before the deferred runtime initializes; this prevents the runtime spacer and overlapping navigation from shifting the page after first paint.
+Inline `carlisle-hero-critical.css` and `carlisle-hero-prepaint.js` in the Webflow site head. The small synchronous pre-paint bootstrap reserves the hero's authored footprint and captures the hero/navigation layout snapshot before the deferred runtime initializes. The runtime reuses that snapshot instead of forcing duplicate post-paint style reads, preserving zero CLS while reducing mobile blocking work.
 
 ```html
 <script
@@ -24,7 +24,7 @@ Inline `carlisle-hero-critical.css` and `carlisle-hero-prepaint.js` in the Webfl
   integrity="sha384-INTEGRITY"
   crossorigin="anonymous"
   defer
-  data-carlisle-runtime="0.1.4"
+  data-carlisle-runtime="0.1.5"
 ></script>
 ```
 

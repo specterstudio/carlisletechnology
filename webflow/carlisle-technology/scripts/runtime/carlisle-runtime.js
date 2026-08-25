@@ -1,7 +1,7 @@
 (function carlisleRuntimeBootstrap(window, document) {
   "use strict";
 
-  const VERSION = "0.1.4";
+  const VERSION = "0.1.5";
   const RUNTIME_NAME = "CarlisleRuntime";
   const SWIPER_VERSION = "8";
   const SWIPER_CSS = `https://cdn.jsdelivr.net/npm/swiper@${SWIPER_VERSION}/swiper-bundle.min.css`;
@@ -639,10 +639,18 @@
         .filter(Boolean)
         .map((element) => [element, element.getAttribute("style")])
     );
-    const navEnd = {
-      background: nav ? getComputedStyle(nav).backgroundColor : "transparent",
-      color: navText[0] ? getComputedStyle(navText[0]).color : "currentColor",
-    };
+    const prepaintSnapshot = window.__CarlisleHeroPrepaint;
+    const hasPrepaintSnapshot =
+      prepaintSnapshot?.version === VERSION &&
+      prepaintSnapshot.layout?.rect &&
+      prepaintSnapshot.layout?.styles &&
+      prepaintSnapshot.navEnd;
+    const navEnd = hasPrepaintSnapshot
+      ? prepaintSnapshot.navEnd
+      : {
+          background: nav ? getComputedStyle(nav).backgroundColor : "transparent",
+          color: navText[0] ? getComputedStyle(navText[0]).color : "currentColor",
+        };
 
     let spacer = visual.parentNode?.querySelector(
       ":scope > [data-hero-visual-spacer]"
@@ -651,7 +659,7 @@
     let stateName = "expanded";
     let tween = null;
     let lastTouchY = 0;
-    let lastScrollY = window.scrollY || 0;
+    let lastScrollY = hasPrepaintSnapshot ? prepaintSnapshot.scrollY || 0 : window.scrollY || 0;
     let finalRadius = "0px";
 
     const viewportHeight = () =>
@@ -899,7 +907,10 @@
       lastTouchY = currentY;
     }
 
-    naturalLayout = measureNaturalVisualLayout();
+    naturalLayout = hasPrepaintSnapshot
+      ? prepaintSnapshot.layout
+      : measureNaturalVisualLayout();
+    finalRadius = naturalLayout.borderRadius || "0px";
     setFullscreen(naturalLayout);
     root.classList.add("hero-anim-ready");
     window.addEventListener("wheel", handleWheel, { passive: false, capture: true });

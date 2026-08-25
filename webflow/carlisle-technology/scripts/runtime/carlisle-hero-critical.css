@@ -1,4 +1,4 @@
-/* Carlisle Runtime 0.1.4 pre-paint contract. Keep this inline in the Webflow site head. */
+/* Carlisle Runtime 0.1.5 pre-paint contract. Keep this inline in the Webflow site head. */
 html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready) [hero-visual] {
   position: fixed !important;
   inset: 0 !important;

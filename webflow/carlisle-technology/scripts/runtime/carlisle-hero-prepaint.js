@@ -1,7 +1,8 @@
 (function carlisleHeroPrepaint(window, document) {
   "use strict";
 
-  const VERSION = "0.1.4";
+  const VERSION = "0.1.5";
+  const SNAPSHOT_NAME = "__CarlisleHeroPrepaint";
   const root = document.documentElement;
   if (!root || root.classList.contains("wf-design-mode") || root.classList.contains("w-editor")) {
     return;
@@ -22,24 +23,60 @@
 
     const rect = visual.getBoundingClientRect();
     const styles = window.getComputedStyle(visual);
+    const nav = document.querySelector(".nav_component");
+    const navText = document.querySelector(
+      [
+        ".nav_desktop_wrap .nav_links_link",
+        ".nav_desktop_wrap .nav_links_link *",
+        ".nav_desktop_logo",
+        ".nav_desktop_logo *",
+        ".nav_mobile_logo",
+        ".nav_mobile_logo *",
+      ].join(", ")
+    );
+    const navStyles = nav ? window.getComputedStyle(nav) : null;
+    const navTextStyles = navText ? window.getComputedStyle(navText) : null;
+    const layout = {
+      rect: {
+        width: rect.width,
+        height: rect.height,
+      },
+      styles: {
+        display: styles.display === "inline" ? "block" : styles.display,
+        margin: styles.margin,
+        flex: styles.flex,
+        gridColumn: styles.gridColumn,
+        gridRow: styles.gridRow,
+      },
+      borderRadius: styles.borderRadius || "0px",
+    };
     const spacer = document.createElement("div");
     spacer.setAttribute("aria-hidden", "true");
     spacer.dataset.heroVisualSpacer = "";
     spacer.dataset.carlisleHeroPrepaint = VERSION;
     Object.assign(spacer.style, {
-      display: styles.display === "inline" ? "block" : styles.display,
+      display: layout.styles.display,
       width: `${rect.width}px`,
       height: `${rect.height}px`,
-      margin: styles.margin,
-      flex: styles.flex,
-      gridColumn: styles.gridColumn,
-      gridRow: styles.gridRow,
+      margin: layout.styles.margin,
+      flex: layout.styles.flex,
+      gridColumn: layout.styles.gridColumn,
+      gridRow: layout.styles.gridRow,
       visibility: "hidden",
       pointerEvents: "none",
     });
     visual.parentNode.insertBefore(spacer, visual);
 
     if (!hadReadyClass) root.classList.remove("hero-anim-ready");
+    window[SNAPSHOT_NAME] = {
+      version: VERSION,
+      layout,
+      scrollY: window.scrollY || 0,
+      navEnd: {
+        background: navStyles?.backgroundColor || "transparent",
+        color: navTextStyles?.color || "currentColor",
+      },
+    };
     root.dataset.carlisleHeroPrepaint = VERSION;
     return true;
   }
