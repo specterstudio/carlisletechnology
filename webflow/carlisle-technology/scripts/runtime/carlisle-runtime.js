@@ -1,7 +1,7 @@
 (function carlisleRuntimeBootstrap(window, document) {
   "use strict";
 
-  const VERSION = "0.1.1";
+  const VERSION = "0.1.2";
   const RUNTIME_NAME = "CarlisleRuntime";
   const SWIPER_VERSION = "8";
   const SWIPER_CSS = `https://cdn.jsdelivr.net/npm/swiper@${SWIPER_VERSION}/swiper-bundle.min.css`;
@@ -434,6 +434,13 @@
     });
   }
 
+  function initResponsiveImages() {
+    document.querySelectorAll(".card_industry_bg_img").forEach((image) => {
+      image.sizes = "(max-width: 767px) 100vw, (max-width: 991px) 50vw, 33vw";
+      image.dataset.carlisleResponsiveSizes = "industry-card";
+    });
+  }
+
   function initAccessibilityPatch() {
     const socialLabels = [
       ["facebook", "Visit Carlisle Technology on Facebook"],
@@ -786,6 +793,7 @@
     document.documentElement.dataset.carlisleRuntime = VERSION;
 
     initDynamicYears();
+    initResponsiveImages();
     initAccessibilityPatch();
     initHomeResources();
 

@@ -29,7 +29,7 @@ test("runtime parses and exposes a versioned API without booting twice", () => {
     window,
   });
 
-  assert.equal(window.CarlisleRuntime.version, "0.1.1");
+  assert.equal(window.CarlisleRuntime.version, "0.1.2");
   assert.equal(window.CarlisleRuntime.state.booted, false);
   assert.equal(typeof window.CarlisleRuntime.boot, "function");
   assert.equal(typeof readyCallback, "function");
@@ -83,4 +83,12 @@ test("industry sliders remain static on mobile", () => {
   assert.match(source, /industry-mobile-static/);
   assert.match(source, /classList\.remove\("swiper", "swiper-initialized", "swiper-horizontal"\)/);
   assert.match(source, /addEventListener\("change", updateIndustrySliders\)/);
+});
+
+test("industry-card images receive a bounded responsive sizes rule", () => {
+  assert.match(source, /document\.querySelectorAll\("\.card_industry_bg_img"\)/);
+  assert.match(
+    source,
+    /\(max-width: 767px\) 100vw, \(max-width: 991px\) 50vw, 33vw/
+  );
 });

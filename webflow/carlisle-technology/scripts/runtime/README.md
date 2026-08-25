@@ -9,6 +9,7 @@ It currently owns:
 - the homepage hero animation;
 - homepage latest-resource card selection without Finsweet;
 - removal of the homepage's hidden resource-source DOM after card selection;
+- responsive `sizes` correction for industry-card imagery;
 - dynamic years and the global accessibility repair.
 
 The production consumer must use an immutable Git commit and SHA-384 integrity value. Do not use `@main` in Webflow.
@@ -19,7 +20,7 @@ The production consumer must use an immutable Git commit and SHA-384 integrity v
   integrity="sha384-INTEGRITY"
   crossorigin="anonymous"
   defer
-  data-carlisle-runtime="0.1.1"
+  data-carlisle-runtime="0.1.2"
 ></script>
 ```
 
