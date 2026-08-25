@@ -1,7 +1,7 @@
 (function carlisleRuntimeBootstrap(window, document) {
   "use strict";
 
-  const VERSION = "0.1.3";
+  const VERSION = "0.1.4";
   const RUNTIME_NAME = "CarlisleRuntime";
   const SWIPER_VERSION = "8";
   const SWIPER_CSS = `https://cdn.jsdelivr.net/npm/swiper@${SWIPER_VERSION}/swiper-bundle.min.css`;
@@ -644,7 +644,10 @@
       color: navText[0] ? getComputedStyle(navText[0]).color : "currentColor",
     };
 
-    let spacer = null;
+    let spacer = visual.parentNode?.querySelector(
+      ":scope > [data-hero-visual-spacer]"
+    ) || null;
+    let naturalLayout = null;
     let stateName = "expanded";
     let tween = null;
     let lastTouchY = 0;
@@ -660,28 +663,53 @@
       else element.setAttribute("style", style);
     };
 
-    function measureNaturalVisualRect() {
+    function measureNaturalVisualLayout() {
       const currentStyle = visual.getAttribute("style");
+      const hadReadyClass = root.classList.contains("hero-anim-ready");
+      const spacerDisplay = spacer?.style.display;
+
+      if (spacer) spacer.style.display = "none";
       root.classList.add("hero-anim-ready");
       restore(visual);
+
       const rect = visual.getBoundingClientRect();
-      finalRadius = getComputedStyle(visual).borderRadius || "0px";
+      const styles = getComputedStyle(visual);
+      const layout = {
+        rect: {
+          width: rect.width,
+          height: rect.height,
+        },
+        styles: {
+          display: styles.display === "inline" ? "block" : styles.display,
+          margin: styles.margin,
+          flex: styles.flex,
+          gridColumn: styles.gridColumn,
+          gridRow: styles.gridRow,
+        },
+        borderRadius: styles.borderRadius || "0px",
+      };
+
       if (currentStyle === null) visual.removeAttribute("style");
       else visual.setAttribute("style", currentStyle);
-      root.classList.remove("hero-anim-ready");
-      return rect;
+      if (!hadReadyClass) root.classList.remove("hero-anim-ready");
+      if (spacer) spacer.style.display = spacerDisplay || layout.styles.display;
+
+      finalRadius = layout.borderRadius;
+      return layout;
     }
 
-    function ensureSpacer(rect) {
+    function ensureSpacer(layout) {
       if (!spacer) {
         spacer = document.createElement("div");
         spacer.setAttribute("aria-hidden", "true");
         spacer.dataset.heroVisualSpacer = "";
         visual.parentNode.insertBefore(spacer, visual);
       }
-      const styles = getComputedStyle(visual);
+
+      const rect = layout.rect;
+      const styles = layout.styles;
       Object.assign(spacer.style, {
-        display: styles.display === "inline" ? "block" : styles.display,
+        display: styles.display,
         width: `${rect.width}px`,
         height: `${rect.height}px`,
         margin: styles.margin,
@@ -699,8 +727,8 @@
       gsap.set(navText, { color: "#fff" });
     }
 
-    function setFullscreen(rect) {
-      ensureSpacer(rect);
+    function setFullscreen(layout) {
+      ensureSpacer(layout);
       setNavStart();
       gsap.set(visual, {
         autoAlpha: 1,
@@ -732,7 +760,9 @@
       if (stateName === "collapsed" || stateName === "collapsing") return;
       stateName = "collapsing";
       if (tween) tween.kill();
-      const targetRect = (spacer || ensureSpacer(measureNaturalVisualRect())).getBoundingClientRect();
+      const targetRect = (
+        spacer || ensureSpacer(measureNaturalVisualLayout())
+      ).getBoundingClientRect();
 
       tween = gsap.timeline({
         defaults: { ease: "power3.inOut", overwrite: "auto" },
@@ -772,7 +802,14 @@
       stateName = "expanding";
       if (tween) tween.kill();
       const rect = visual.getBoundingClientRect();
-      ensureSpacer(rect);
+      naturalLayout = {
+        ...naturalLayout,
+        rect: {
+          width: rect.width,
+          height: rect.height,
+        },
+      };
+      ensureSpacer(naturalLayout);
 
       gsap.set(visual, {
         position: "fixed",
@@ -862,7 +899,8 @@
       lastTouchY = currentY;
     }
 
-    setFullscreen(measureNaturalVisualRect());
+    naturalLayout = measureNaturalVisualLayout();
+    setFullscreen(naturalLayout);
     root.classList.add("hero-anim-ready");
     window.addEventListener("wheel", handleWheel, { passive: false, capture: true });
     window.addEventListener(

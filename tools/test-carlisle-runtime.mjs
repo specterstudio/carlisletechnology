@@ -10,6 +10,20 @@ const runtimePath = path.join(
   "webflow/carlisle-technology/scripts/runtime/carlisle-runtime.js"
 );
 const source = fs.readFileSync(runtimePath, "utf8");
+const criticalCss = fs.readFileSync(
+  path.join(
+    repositoryRoot,
+    "webflow/carlisle-technology/scripts/runtime/carlisle-hero-critical.css"
+  ),
+  "utf8"
+);
+const prepaintSource = fs.readFileSync(
+  path.join(
+    repositoryRoot,
+    "webflow/carlisle-technology/scripts/runtime/carlisle-hero-prepaint.js"
+  ),
+  "utf8"
+);
 
 test("runtime parses and exposes a versioned API without booting twice", () => {
   let readyCallback;
@@ -29,7 +43,7 @@ test("runtime parses and exposes a versioned API without booting twice", () => {
     window,
   });
 
-  assert.equal(window.CarlisleRuntime.version, "0.1.3");
+  assert.equal(window.CarlisleRuntime.version, "0.1.4");
   assert.equal(window.CarlisleRuntime.state.booted, false);
   assert.equal(typeof window.CarlisleRuntime.boot, "function");
   assert.equal(typeof readyCallback, "function");
@@ -160,4 +174,21 @@ test("industry-card images receive a bounded responsive sizes rule", () => {
     source,
     /\(max-width: 767px\) 100vw, \(max-width: 991px\) 50vw, 33vw/
   );
+});
+
+test("hero critical CSS keeps the overlapping navigation out of document flow", () => {
+  assert.match(criticalCss, /\.nav_component\s*\{[^}]*position: fixed !important;/s);
+  assert.match(criticalCss, /\[hero-visual\]\s*\{[^}]*position: fixed !important;/s);
+});
+
+test("hero pre-paint bootstrap parses and reserves the authored visual footprint", () => {
+  assert.doesNotThrow(() => new vm.Script(prepaintSource));
+  assert.match(prepaintSource, /data-hero-visual-spacer/);
+  assert.match(prepaintSource, /insertBefore\(spacer, visual\)/);
+});
+
+test("runtime reuses and temporarily removes the pre-paint spacer while measuring", () => {
+  assert.match(source, /:scope > \[data-hero-visual-spacer\]/);
+  assert.match(source, /if \(spacer\) spacer\.style\.display = "none";/);
+  assert.match(source, /naturalLayout = measureNaturalVisualLayout\(\)/);
 });
