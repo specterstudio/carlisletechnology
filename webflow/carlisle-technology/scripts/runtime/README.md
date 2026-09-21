@@ -29,7 +29,7 @@ Inline `carlisle-hero-critical.css` and `carlisle-hero-prepaint.js` in the Webfl
   integrity="sha384-INTEGRITY"
   crossorigin="anonymous"
   defer
-  data-carlisle-runtime="0.1.7"
+  data-carlisle-runtime="0.1.8"
 ></script>
 ```
 

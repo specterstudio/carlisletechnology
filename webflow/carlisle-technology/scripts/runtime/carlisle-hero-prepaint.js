@@ -1,7 +1,7 @@
 (function carlisleHeroPrepaint(window, document) {
   "use strict";
 
-  const VERSION = "0.1.7";
+  const VERSION = "0.1.8";
   const SNAPSHOT_NAME = "__CarlisleHeroPrepaint";
   const root = document.documentElement;
   if (!root || root.classList.contains("wf-design-mode") || root.classList.contains("w-editor")) {

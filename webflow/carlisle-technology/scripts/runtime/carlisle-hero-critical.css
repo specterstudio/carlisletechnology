@@ -1,4 +1,10 @@
-/* Carlisle Runtime 0.1.7 pre-paint contract. Keep this inline in the Webflow site head. */
+/* Carlisle Runtime 0.1.8 pre-paint contract. Keep this inline in the Webflow site head. */
+/* Keep the single page heading in the accessibility tree when its parent fades out.
+   The parent's opacity still controls appearance; hidden hero controls stay hidden. */
+[hero-content] h1 {
+  visibility: visible;
+}
+
 @media (prefers-reduced-motion: no-preference) {
 html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready):has([hero-visual]):has([hero-content]) [hero-visual] {
   position: fixed !important;

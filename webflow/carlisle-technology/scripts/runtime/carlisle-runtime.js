@@ -1,7 +1,7 @@
 (function carlisleRuntimeBootstrap(window, document) {
   "use strict";
 
-  const VERSION = "0.1.7";
+  const VERSION = "0.1.8";
   const RUNTIME_NAME = "CarlisleRuntime";
   const SWIPER_VERSION = "8";
   const SWIPER_CSS = `https://cdn.jsdelivr.net/npm/swiper@${SWIPER_VERSION}/swiper-bundle.min.css`;
@@ -199,8 +199,17 @@
     return { element, wrapper };
   }
 
+  function sliderSlideRole(wrapper) {
+    return wrapper && (wrapper.getAttribute("role") === "list" || /^(UL|OL)$/.test(wrapper.tagName))
+      ? "listitem"
+      : "group";
+  }
+
   function commonSliderOptions(component, element) {
     return {
+      a11y: {
+        slideRole: sliderSlideRole(component.querySelector(".slider_list")),
+      },
       slidesPerView: "auto",
       followFinger: element.getAttribute("data-follow-finger") === "true",
       freeMode: element.getAttribute("data-free-mode") === "true",
@@ -313,7 +322,11 @@
           "swiper-slide-duplicate",
           "is-active"
         );
-        slide.removeAttribute("role");
+        if (sliderSlideRole(prepared.wrapper) === "listitem") {
+          slide.setAttribute("role", "listitem");
+        } else {
+          slide.removeAttribute("role");
+        }
         slide.removeAttribute("aria-label");
         slide.style.removeProperty("width");
         slide.style.removeProperty("margin-right");

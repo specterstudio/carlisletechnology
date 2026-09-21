@@ -43,7 +43,7 @@ test("runtime parses and exposes a versioned API without booting twice", () => {
     window,
   });
 
-  assert.equal(window.CarlisleRuntime.version, "0.1.7");
+  assert.equal(window.CarlisleRuntime.version, "0.1.8");
   assert.equal(window.CarlisleRuntime.state.booted, false);
   assert.equal(typeof window.CarlisleRuntime.boot, "function");
   assert.equal(typeof readyCallback, "function");
@@ -73,6 +73,27 @@ test("third-party dependencies have one canonical URL owner", () => {
       ?.length,
     1
   );
+});
+
+test("Swiper keeps authored list semantics without adding list items to ordinary containers", () => {
+  const window = {};
+  const document = { readyState: "loading", addEventListener() {} };
+  const instrumented = source.replace(
+    "    initSliders,",
+    "    initSliders, testSliderOptions: commonSliderOptions,"
+  );
+  vm.runInNewContext(instrumented, { console, document, Map, Promise, window });
+  const element = { getAttribute() { return null; } };
+  for (const [tagName, role, expected] of [
+    ["DIV", "list", "listitem"],
+    ["UL", null, "listitem"],
+    ["OL", null, "listitem"],
+    ["DIV", null, "group"],
+  ]) {
+    const wrapper = { tagName, getAttribute() { return role; } };
+    const component = { querySelector(selector) { return selector === ".slider_list" ? wrapper : null; } };
+    assert.equal(window.CarlisleRuntime.testSliderOptions(component, element).a11y.slideRole, expected);
+  }
 });
 
 for (const markers of [[], ["[hero-visual]"], ["[hero-content]"]]) {
