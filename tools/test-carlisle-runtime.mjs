@@ -43,7 +43,7 @@ test("runtime parses and exposes a versioned API without booting twice", () => {
     window,
   });
 
-  assert.equal(window.CarlisleRuntime.version, "0.1.5");
+  assert.equal(window.CarlisleRuntime.version, "0.1.6");
   assert.equal(window.CarlisleRuntime.state.booted, false);
   assert.equal(typeof window.CarlisleRuntime.boot, "function");
   assert.equal(typeof readyCallback, "function");
@@ -74,6 +74,29 @@ test("third-party dependencies have one canonical URL owner", () => {
     1
   );
 });
+
+for (const markers of [[], ["[hero-visual]"], ["[hero-content]"]]) {
+  test(`pages with ${markers.join(" and ") || "no hero"} keep navigation ready without loading animation dependencies`, () => {
+    const classes = new Set();
+    const injectedDependencies = [];
+    const document = {
+      readyState: "complete",
+      documentElement: { classList: { add: value => classes.add(value) }, dataset: {} },
+      head: { appendChild: node => injectedDependencies.push(node) },
+      querySelector: selector => markers.includes(selector) ? {} : null,
+      querySelectorAll: () => [],
+    };
+    const window = {
+      location: { pathname: "/product/icap" },
+      requestIdleCallback() {},
+      setTimeout() {},
+    };
+    vm.runInNewContext(source, { console, document, Map, Promise, window });
+    assert.equal(classes.has("hero-anim-ready"), true);
+    assert.equal(window.CarlisleRuntime.state.features.has("hero"), false);
+    assert.equal(injectedDependencies.length, 0);
+  });
+}
 
 test("Finsweet is explicitly excluded from the homepage", () => {
   assert.match(

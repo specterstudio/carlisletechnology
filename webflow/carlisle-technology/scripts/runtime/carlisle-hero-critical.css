@@ -1,5 +1,5 @@
-/* Carlisle Runtime 0.1.5 pre-paint contract. Keep this inline in the Webflow site head. */
-html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready) [hero-visual] {
+/* Carlisle Runtime 0.1.6 pre-paint contract. Keep this inline in the Webflow site head. */
+html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready):has([hero-visual]):has([hero-content]) [hero-visual] {
   position: fixed !important;
   inset: 0 !important;
   width: 100vw !important;
@@ -13,14 +13,14 @@ html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready) [hero-visual] {
   background-color: #092e89 !important;
 }
 
-html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready) [hero-content] {
+html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready):has([hero-visual]):has([hero-content]) [hero-content] {
   position: relative;
   z-index: 11;
   opacity: 1 !important;
   visibility: visible !important;
 }
 
-html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready) .nav_component {
+html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready):has([hero-visual]):has([hero-content]) .nav_component {
   position: fixed !important;
   inset: 0 0 auto !important;
   width: 100% !important;
@@ -28,17 +28,17 @@ html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready) .nav_component {
   background-color: transparent !important;
 }
 
-html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready)
+html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready):has([hero-visual]):has([hero-content])
   .nav_desktop_wrap
   .nav_links_item,
-html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready)
+html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready):has([hero-visual]):has([hero-content])
   .nav_desktop_wrap
   .nav_links_item
   *,
-html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready) .nav_desktop_logo,
-html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready) .nav_desktop_logo *,
-html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready) .nav_mobile_logo,
-html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready) .nav_mobile_logo * {
+html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready):has([hero-visual]):has([hero-content]) .nav_desktop_logo,
+html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready):has([hero-visual]):has([hero-content]) .nav_desktop_logo *,
+html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready):has([hero-visual]):has([hero-content]) .nav_mobile_logo,
+html:not(.wf-design-mode):not(.w-editor):not(.hero-anim-ready):has([hero-visual]):has([hero-content]) .nav_mobile_logo * {
   color: #fff !important;
 }
 

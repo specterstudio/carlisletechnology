@@ -1,7 +1,7 @@
 (function carlisleRuntimeBootstrap(window, document) {
   "use strict";
 
-  const VERSION = "0.1.5";
+  const VERSION = "0.1.6";
   const RUNTIME_NAME = "CarlisleRuntime";
   const SWIPER_VERSION = "8";
   const SWIPER_CSS = `https://cdn.jsdelivr.net/npm/swiper@${SWIPER_VERSION}/swiper-bundle.min.css`;
@@ -950,12 +950,17 @@
       once("slider-scheduler", scheduleSliders);
     }
 
-    const hasHero = Boolean(document.querySelector("[hero-visual], [hero-content]"));
+    const hasHero = Boolean(
+      document.querySelector("[hero-visual]") && document.querySelector("[hero-content]")
+    );
     if (hasHero) {
       once("hero", () => ensureGsap(true).then(initHero)).catch((error) => {
         document.documentElement.classList.add("hero-anim-ready");
         console.error("[Carlisle Runtime] Hero failed to initialize.", error);
       });
+    } else {
+      // Pages without a complete animated hero must keep their authored navigation.
+      document.documentElement.classList.add("hero-anim-ready");
     }
 
     whenIdle(() => {
