@@ -43,7 +43,7 @@ test("runtime parses and exposes a versioned API without booting twice", () => {
     window,
   });
 
-  assert.equal(window.CarlisleRuntime.version, "0.1.6");
+  assert.equal(window.CarlisleRuntime.version, "0.1.7");
   assert.equal(window.CarlisleRuntime.state.booted, false);
   assert.equal(typeof window.CarlisleRuntime.boot, "function");
   assert.equal(typeof readyCallback, "function");
@@ -104,6 +104,35 @@ test("Finsweet is explicitly excluded from the homepage", () => {
     /if \(window\.location\.pathname === "\/"\) return false;/
   );
   assert.match(source, /whenIdle\(\(\) => \{/);
+});
+
+test("reduced-motion heroes become ready without animation downloads or a pre-paint spacer", async () => {
+  const classes = new Set();
+  const injected = [];
+  let removed = false;
+  const document = {
+    readyState: "complete",
+    documentElement: { classList: { add: name => classes.add(name), contains: name => classes.has(name) }, dataset: {} },
+    head: { appendChild: node => injected.push(node) },
+    querySelector: selector => selector === "[hero-visual]"
+      ? { parentNode: { querySelector: () => ({ remove() { removed = true; } }) } }
+      : selector === "[hero-content]" ? {} : null,
+    querySelectorAll: () => [],
+  };
+  const window = {
+    location: { pathname: "/" },
+    matchMedia: () => ({ matches: true }),
+    requestIdleCallback() {},
+    setTimeout() {},
+  };
+  vm.runInNewContext(prepaintSource, { window, document });
+  assert.equal(classes.has("hero-anim-ready"), true);
+  assert.equal(window.__CarlisleHeroPrepaint, undefined);
+  vm.runInNewContext(source, { console, document, Map, Promise, window });
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(injected.length, 0);
+  assert.equal(removed, true);
 });
 
 test("homepage resources are copied before their hidden source DOM is removed", () => {

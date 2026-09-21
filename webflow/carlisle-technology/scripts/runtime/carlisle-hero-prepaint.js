@@ -1,17 +1,21 @@
 (function carlisleHeroPrepaint(window, document) {
   "use strict";
 
-  const VERSION = "0.1.6";
+  const VERSION = "0.1.7";
   const SNAPSHOT_NAME = "__CarlisleHeroPrepaint";
   const root = document.documentElement;
   if (!root || root.classList.contains("wf-design-mode") || root.classList.contains("w-editor")) {
+    return;
+  }
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
+    root.classList.add("hero-anim-ready");
     return;
   }
 
   function installSpacer() {
     const visual = document.querySelector("[hero-visual]");
     const code = document.querySelector(".hero_code");
-    if (!visual || !code || !visual.parentNode) return false;
+    if (!visual || !document.querySelector("[hero-content]") || !code || !visual.parentNode) return false;
 
     const existing = visual.parentNode.querySelector(
       ":scope > [data-hero-visual-spacer]"

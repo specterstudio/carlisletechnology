@@ -1,7 +1,7 @@
 (function carlisleRuntimeBootstrap(window, document) {
   "use strict";
 
-  const VERSION = "0.1.6";
+  const VERSION = "0.1.7";
   const RUNTIME_NAME = "CarlisleRuntime";
   const SWIPER_VERSION = "8";
   const SWIPER_CSS = `https://cdn.jsdelivr.net/npm/swiper@${SWIPER_VERSION}/swiper-bundle.min.css`;
@@ -575,7 +575,11 @@
         );
         if (!children.length) list.removeAttribute("role");
         else if (!list.querySelector(':scope > [role="listitem"], :scope > li')) {
-          children.forEach((child) => child.setAttribute("role", "listitem"));
+          // Only generic wrappers can safely become list items. Keep labels,
+          // controls, and deliberately assigned roles intact.
+          if (children.every((child) => /^(div|span)$/i.test(child.tagName) && !child.hasAttribute("role"))) {
+            children.forEach((child) => child.setAttribute("role", "listitem"));
+          }
         }
       });
 
@@ -589,6 +593,20 @@
 
     patch();
     if (!window.MutationObserver) return;
+
+    // Finsweet copies CMS list items into standalone previous/next links.
+    // Those copies are no longer members of the hidden source collection list.
+    // Observe only these small containers, including copies loaded after the
+    // general accessibility observer has finished.
+    document.querySelectorAll('[fs-list-element="previous-item"], [fs-list-element="next-item"]').forEach((container) => {
+      const repairCopy = () => {
+        container.querySelectorAll(':scope > .w-dyn-item[role="listitem"]').forEach((item) => {
+          item.removeAttribute("role");
+        });
+      };
+      repairCopy();
+      new MutationObserver(repairCopy).observe(container, { childList: true });
+    });
 
     let scheduled = false;
     const observer = new MutationObserver((mutations) => {
@@ -612,6 +630,12 @@
 
     const visual = document.querySelector("[hero-visual]");
     const content = document.querySelector("[hero-content]");
+    const motionPreference = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    if (motionPreference?.matches) {
+      visual?.parentNode?.querySelector(":scope > [data-hero-visual-spacer]")?.remove();
+      root.classList.add("hero-anim-ready");
+      return;
+    }
     if (!visual || !content || !window.gsap) {
       root.classList.add("hero-anim-ready");
       return;
@@ -913,6 +937,15 @@
     finalRadius = naturalLayout.borderRadius || "0px";
     setFullscreen(naturalLayout);
     root.classList.add("hero-anim-ready");
+    motionPreference?.addEventListener("change", (event) => {
+      if (!event.matches) return;
+      if (tween) tween.kill();
+      tween = null;
+      stateName = "static";
+      removeSpacer();
+      originalStyles.forEach((_style, element) => restore(element));
+      if (window.ScrollTrigger) window.ScrollTrigger.refresh();
+    });
     window.addEventListener("wheel", handleWheel, { passive: false, capture: true });
     window.addEventListener(
       "touchstart",
@@ -954,7 +987,9 @@
       document.querySelector("[hero-visual]") && document.querySelector("[hero-content]")
     );
     if (hasHero) {
-      once("hero", () => ensureGsap(true).then(initHero)).catch((error) => {
+      once("hero", () => window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
+        ? Promise.resolve(initHero())
+        : ensureGsap(true).then(initHero)).catch((error) => {
         document.documentElement.classList.add("hero-anim-ready");
         console.error("[Carlisle Runtime] Hero failed to initialize.", error);
       });
